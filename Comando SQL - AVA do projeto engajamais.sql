@@ -97,6 +97,162 @@ create index idx_mdlmsn_read on mdl_message_read(useridfrom,timecreated);
 -- ===========================================
 /* Selects para busca dos dados */
 -- ===========================================
+/* Select reduzido apenas com as variáveis utilizadas no projeto e algumas mudanças para o caso de utilização com integração de CMS */
+
+set @data_inicio = unix_timestamp('2021-10-01 00:00:00');
+set @data_final = unix_timestamp('2021-11-30 23:59:59');
+
+SELECT 
+base.curso AS "Curso",
+base.semestre AS "Semestre",
+base.periodo AS "Período",
+base.disciplina_nome AS "Nome da Disciplina",
+base.disciplina_id AS "ID da Disciplina",
+base.data_inicio AS "Data de Início",
+base.data_final AS "Data de Final",
+base.aluno_nome AS "Nome do Aluno",
+base.aluno_id AS "ID do Aluno",
+COALESCE(var01,0) AS "var01",
+COALESCE(var09,0) AS "var09",
+COALESCE(var13a,0) AS "var13a",
+COALESCE(var13b,0) AS "var13b",
+COALESCE(var13c,0) AS "var13c",
+COALESCE(var13d,0) AS "var13d",
+COALESCE(var17,0) AS "var17",
+COALESCE(var18,0) AS "var18",
+COALESCE(var24,0) AS "var24",
+COALESCE(var27,0) AS "var27",
+COALESCE(var34,0) AS "var34"
+-- Junções que determinam os valores das variáveis para cada aluno
+FROM
+(SELECT * FROM base) AS base
+	LEFT OUTER JOIN (SELECT b.disciplina_id, b.aluno_id, count(*) AS "var01"
+		FROM mdl_forum_posts p
+		INNER JOIN mdl_forum_discussions d ON d.id = p.discussion
+		INNER JOIN base b ON d.course = b.disciplina_id AND p.userid=b.aluno_id AND p.created BETWEEN @data_inicio and @data_final
+		GROUP BY b.disciplina_id, b.aluno_id) AS VAR01
+	ON VAR01.disciplina_id = base.disciplina_id AND VAR01.aluno_id = base.aluno_id
+LEFT OUTER JOIN    
+(SELECT tmp.disciplina_id,sum(tmp.totgeral) as "var09" from 
+(SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "totgeral"
+FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
+	FROM base b
+	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
+	/*Atividades*/
+	(component = "mod_lti" AND action="viewed") ) l
+	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
+    GROUP BY temp.disciplina_id, temp.aluno_id)  as tmp
+    GROUP BY tmp.disciplina_id) as var09
+    ON var09.disciplina_id = base.disciplina_id
+	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13a"
+		FROM base b
+		INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 6 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 12) l
+		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+		GROUP BY b.disciplina_id,b.aluno_id) AS var13a
+	ON var13a.aluno_id = base.aluno_id AND var13a.disciplina_id = base.disciplina_id
+	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13b"
+		FROM base b
+		INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 12 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 18) l
+		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+		GROUP BY b.disciplina_id,b.aluno_id) AS var13b
+	ON var13b.aluno_id = base.aluno_id AND var13b.disciplina_id = base.disciplina_id
+	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13c"
+	FROM base b
+	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 18 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 24) l
+	ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+	GROUP BY b.disciplina_id,b.aluno_id) AS var13c
+ON var13c.aluno_id = base.aluno_id AND var13c.disciplina_id = base.disciplina_id
+LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13d"
+FROM base b
+INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 0 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 6) l
+ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+GROUP BY b.disciplina_id,b.aluno_id) AS var13d
+ON var13d.aluno_id = base.aluno_id AND var13d.disciplina_id = base.disciplina_id
+LEFT OUTER JOIN (SELECT d.courseid,d.userid, SUM(d.intervalo) AS "var17" 
+	FROM (SELECT c.courseid, c.userid, 
+		CASE WHEN c.proxima_action="loggedin" THEN 0
+		WHEN c.proximo_time= NULL THEN 0
+                WHEN (c.proximo_time - c.timecreated) >= 28800 THEN 0
+		ELSE c.proximo_time - c.timecreated END AS "intervalo"
+			 FROM (SELECT a.id,a.courseid,a.userid,a.component,a.action,a.timecreated,b.action AS "proxima_action", b.timecreated AS "proximo_time" 
+			FROM 
+            (SELECT ( row_number() OVER(ORDER BY userid,timecreated)) AS id, timecreated,
+userid, courseid, component, action 
+FROM
+(SELECT log.* FROM mdl_logstore_standard_log log WHERE (SELECT count(*) FROM
+id_disciplinas i_dsc where i_dsc.disciplina_id = log.courseid) > 0 AND 
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+UNION
+SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action ='loggedout' AND
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+UNION
+SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action='loggedin' AND
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+) log) a 
+INNER JOIN 
+(SELECT ( row_number() OVER(ORDER BY userid,timecreated)) AS id, timecreated,
+userid, courseid, component, action 
+FROM
+(SELECT log.* FROM mdl_logstore_standard_log log WHERE (SELECT count(*) FROM
+id_disciplinas i_dsc where i_dsc.disciplina_id = log.courseid) > 0 AND 
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+UNION
+SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action ='loggedout' AND
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+UNION
+SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action='loggedin' AND
+(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
+and log.timecreated BETWEEN @data_inicio and @data_final
+) log) b ON a.userid=b.userid AND (b.id-1)=a.id) c
+	INNER JOIN (SELECT distinct(disciplina_id) 
+	FROM base) b ON c.courseid=b.disciplina_id AND c.timecreated BETWEEN @data_inicio and @data_final
+		) d
+		GROUP BY d.courseid,d.userid) AS var17
+	ON var17.courseid = base.disciplina_id AND var17.userid = base.aluno_id
+	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var18"
+			FROM base b
+			INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin") l
+		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+		GROUP BY b.disciplina_id,b.aluno_id) AS var18
+	ON var18.aluno_id = base.aluno_id AND var18.disciplina_id = base.disciplina_id    
+    LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, count(*) AS "var24"
+		FROM (SELECT b.disciplina_id,b.aluno_id, ip, count(*) AS "Num_Acesso_IP"
+	FROM (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin") l
+	INNER JOIN base b ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+	GROUP BY b.disciplina_id,b.aluno_id,l.ip) AS temp
+GROUP BY temp.disciplina_id, temp.aluno_id) AS var24
+ON var24.disciplina_id = base.disciplina_id AND var24.aluno_id = base.aluno_id
+LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "var27"
+FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
+	FROM base b
+	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
+	/*Atividades*/
+	(component = "mod_lti" AND action="viewed") ) l
+	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
+	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
+GROUP BY temp.disciplina_id, temp.aluno_id) AS var27
+ON var27.disciplina_id = base.disciplina_id AND var27.aluno_id = base.aluno_id
+LEFT OUTER JOIN (SELECT b.disciplina_id, b.aluno_id, tmp.gradepercent AS "var34"
+FROM (select re.course, re.userid, avg(re.gradepercent) as gradepercent from 
+		(select lt.id, lt.course, sb.userid, max(sb.gradepercent) as gradepercent from mdl_lti lt
+		   inner join mdl_lti_submission sb on sb.ltiid = lt.id
+			group by lt.course, sb.userid, lt.id) re
+		 group by re.course, re.userid) tmp 
+INNER JOIN base b ON b.disciplina_id = tmp.course AND b.aluno_id = tmp.userid 
+GROUP BY b.disciplina_id, b.aluno_id) AS var34
+ON var34.disciplina_id = base.disciplina_id AND var34.aluno_id = base.aluno_id
+where base.semestre = '2021.4'
+ORDER BY
+base.curso, base.semestre, base.periodo, base.disciplina_nome, base.aluno_nome
+--	)
+-- ===========================================
+
 /* Select completo com algumas mudanças para o caso de utilização com integração de CMS */
 
 set @data_inicio = unix_timestamp('2021-10-01 00:00:00');
@@ -291,162 +447,6 @@ and log.timecreated BETWEEN @data_inicio and @data_final
 	INNER JOIN professores p ON p.professor_id=r.useridto AND p.disciplina_id=b.disciplina_id
 	GROUP BY b.disciplina_id, b.aluno_id) AS var19
     ON var19.disciplina_id = base.disciplina_id AND var19.aluno_id = base.aluno_id
-    LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, count(*) AS "var24"
-		FROM (SELECT b.disciplina_id,b.aluno_id, ip, count(*) AS "Num_Acesso_IP"
-	FROM (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin") l
-	INNER JOIN base b ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-	GROUP BY b.disciplina_id,b.aluno_id,l.ip) AS temp
-GROUP BY temp.disciplina_id, temp.aluno_id) AS var24
-ON var24.disciplina_id = base.disciplina_id AND var24.aluno_id = base.aluno_id
-LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "var27"
-FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
-	FROM base b
-	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
-	/*Atividades*/
-	(component = "mod_lti" AND action="viewed") ) l
-	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
-GROUP BY temp.disciplina_id, temp.aluno_id) AS var27
-ON var27.disciplina_id = base.disciplina_id AND var27.aluno_id = base.aluno_id
-LEFT OUTER JOIN (SELECT b.disciplina_id, b.aluno_id, tmp.gradepercent AS "var34"
-FROM (select re.course, re.userid, avg(re.gradepercent) as gradepercent from 
-		(select lt.id, lt.course, sb.userid, max(sb.gradepercent) as gradepercent from mdl_lti lt
-		   inner join mdl_lti_submission sb on sb.ltiid = lt.id
-			group by lt.course, sb.userid, lt.id) re
-		 group by re.course, re.userid) tmp 
-INNER JOIN base b ON b.disciplina_id = tmp.course AND b.aluno_id = tmp.userid 
-GROUP BY b.disciplina_id, b.aluno_id) AS var34
-ON var34.disciplina_id = base.disciplina_id AND var34.aluno_id = base.aluno_id
-where base.semestre = '2021.4'
-ORDER BY
-base.curso, base.semestre, base.periodo, base.disciplina_nome, base.aluno_nome
---	)
-
--- ===========================================
-/* Select reduzido apenas com as variáveis utilizadas no projeto e algumas mudanças para o caso de utilização com integração de CMS */
-
-set @data_inicio = unix_timestamp('2021-10-01 00:00:00');
-set @data_final = unix_timestamp('2021-11-30 23:59:59');
-
-SELECT 
-base.curso AS "Curso",
-base.semestre AS "Semestre",
-base.periodo AS "Período",
-base.disciplina_nome AS "Nome da Disciplina",
-base.disciplina_id AS "ID da Disciplina",
-base.data_inicio AS "Data de Início",
-base.data_final AS "Data de Final",
-base.aluno_nome AS "Nome do Aluno",
-base.aluno_id AS "ID do Aluno",
-COALESCE(var01,0) AS "var01",
-COALESCE(var09,0) AS "var09",
-COALESCE(var13a,0) AS "var13a",
-COALESCE(var13b,0) AS "var13b",
-COALESCE(var13c,0) AS "var13c",
-COALESCE(var13d,0) AS "var13d",
-COALESCE(var17,0) AS "var17",
-COALESCE(var18,0) AS "var18",
-COALESCE(var24,0) AS "var24",
-COALESCE(var27,0) AS "var27",
-COALESCE(var34,0) AS "var34"
--- Junções que determinam os valores das variáveis para cada aluno
-FROM
-(SELECT * FROM base) AS base
-	LEFT OUTER JOIN (SELECT b.disciplina_id, b.aluno_id, count(*) AS "var01"
-		FROM mdl_forum_posts p
-		INNER JOIN mdl_forum_discussions d ON d.id = p.discussion
-		INNER JOIN base b ON d.course = b.disciplina_id AND p.userid=b.aluno_id AND p.created BETWEEN @data_inicio and @data_final
-		GROUP BY b.disciplina_id, b.aluno_id) AS VAR01
-	ON VAR01.disciplina_id = base.disciplina_id AND VAR01.aluno_id = base.aluno_id
-LEFT OUTER JOIN    
-(SELECT tmp.disciplina_id,sum(tmp.totgeral) as "var09" from 
-(SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "totgeral"
-FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
-	FROM base b
-	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
-	/*Atividades*/
-	(component = "mod_lti" AND action="viewed") ) l
-	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
-    GROUP BY temp.disciplina_id, temp.aluno_id)  as tmp
-    GROUP BY tmp.disciplina_id) as var09
-    ON var09.disciplina_id = base.disciplina_id
-	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13a"
-		FROM base b
-		INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 6 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 12) l
-		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-		GROUP BY b.disciplina_id,b.aluno_id) AS var13a
-	ON var13a.aluno_id = base.aluno_id AND var13a.disciplina_id = base.disciplina_id
-	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13b"
-		FROM base b
-		INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 12 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 18) l
-		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-		GROUP BY b.disciplina_id,b.aluno_id) AS var13b
-	ON var13b.aluno_id = base.aluno_id AND var13b.disciplina_id = base.disciplina_id
-	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13c"
-	FROM base b
-	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 18 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 24) l
-	ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-	GROUP BY b.disciplina_id,b.aluno_id) AS var13c
-ON var13c.aluno_id = base.aluno_id AND var13c.disciplina_id = base.disciplina_id
-LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13d"
-FROM base b
-INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin" AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) >= 0 AND EXTRACT(HOUR FROM FROM_UNIXTIME(timecreated)) < 6) l
-ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-GROUP BY b.disciplina_id,b.aluno_id) AS var13d
-ON var13d.aluno_id = base.aluno_id AND var13d.disciplina_id = base.disciplina_id
-LEFT OUTER JOIN (SELECT d.courseid,d.userid, SUM(d.intervalo) AS "var17" 
-	FROM (SELECT c.courseid, c.userid, 
-		CASE WHEN c.proxima_action="loggedin" THEN 0
-		WHEN c.proximo_time= NULL THEN 0
-                WHEN (c.proximo_time - c.timecreated) >= 28800 THEN 0
-		ELSE c.proximo_time - c.timecreated END AS "intervalo"
-			 FROM (SELECT a.id,a.courseid,a.userid,a.component,a.action,a.timecreated,b.action AS "proxima_action", b.timecreated AS "proximo_time" 
-			FROM 
-            (SELECT ( row_number() OVER(ORDER BY userid,timecreated)) AS id, timecreated,
-userid, courseid, component, action 
-FROM
-(SELECT log.* FROM mdl_logstore_standard_log log WHERE (SELECT count(*) FROM
-id_disciplinas i_dsc where i_dsc.disciplina_id = log.courseid) > 0 AND 
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-UNION
-SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action ='loggedout' AND
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-UNION
-SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action='loggedin' AND
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-) log) a 
-INNER JOIN 
-(SELECT ( row_number() OVER(ORDER BY userid,timecreated)) AS id, timecreated,
-userid, courseid, component, action 
-FROM
-(SELECT log.* FROM mdl_logstore_standard_log log WHERE (SELECT count(*) FROM
-id_disciplinas i_dsc where i_dsc.disciplina_id = log.courseid) > 0 AND 
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-UNION
-SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action ='loggedout' AND
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-UNION
-SELECT log.* FROM mdl_logstore_standard_log log WHERE log.action='loggedin' AND
-(SELECT count(*) FROM id_alunos ialuno where ialuno.aluno_id = log.userid) > 0
-and log.timecreated BETWEEN @data_inicio and @data_final
-) log) b ON a.userid=b.userid AND (b.id-1)=a.id) c
-	INNER JOIN (SELECT distinct(disciplina_id) 
-	FROM base) b ON c.courseid=b.disciplina_id AND c.timecreated BETWEEN @data_inicio and @data_final
-		) d
-		GROUP BY d.courseid,d.userid) AS var17
-	ON var17.courseid = base.disciplina_id AND var17.userid = base.aluno_id
-	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var18"
-			FROM base b
-			INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin") l
-		ON b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
-		GROUP BY b.disciplina_id,b.aluno_id) AS var18
-	ON var18.aluno_id = base.aluno_id AND var18.disciplina_id = base.disciplina_id    
     LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, count(*) AS "var24"
 		FROM (SELECT b.disciplina_id,b.aluno_id, ip, count(*) AS "Num_Acesso_IP"
 	FROM (SELECT * FROM mdl_logstore_standard_log WHERE action="loggedin") l
