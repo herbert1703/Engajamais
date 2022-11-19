@@ -1,6 +1,6 @@
-===========================================
+-- ===========================================
 /* Scripts_SQL_Projeto_ead_script_Inicial */
-===========================================
+-- ===========================================
 -- Criar a view 'alunos'
 CREATE OR REPLACE VIEW alunos AS
 SELECT c.id AS "disciplina_id", u.id AS "aluno_id"
@@ -10,7 +10,7 @@ INNER JOIN mdl_course c ON c.id = e.instanceid
 INNER JOIN mdl_user u ON u.id=rs.userid
 WHERE e.contextlevel=50 AND rs.roleid=5
 ORDER BY c.id, u.id;
-===========================================
+-- ===========================================
 -- Criar a view 'professores'
 CREATE OR REPLACE VIEW professores AS
 SELECT c.id AS "disciplina_id", u.id AS "professor_id"
@@ -20,17 +20,17 @@ INNER JOIN mdl_course c ON c.id = e.instanceid
 INNER JOIN mdl_user u ON u.id=rs.userid
 WHERE e.contextlevel=50 AND rs.roleid IN (2,3,4,9,10,12,13)
 ORDER BY c.id, u.id;
-===========================================
+-- ===========================================
 -- Criar view 'id_alunos' => base = alunos
 CREATE OR REPLACE VIEW id_alunos AS
 SELECT distinct(aluno_id) FROM alunos
 ORDER BY aluno_id;
-==========================================
+-- ===========================================
 -- Criar view 'id_disciplinas' => base = alunos
 CREATE OR REPLACE VIEW id_disciplinas AS
 SELECT distinct(disciplina_id) FROM alunos
 ORDER BY disciplina_id;
-==========================================
+-- ===========================================
 -- Criar view 'log_reduzido'
 CREATE OR REPLACE VIEW log_reduzido AS
 SELECT ( row_number() OVER(ORDER BY userid,timecreated)) AS id, timecreated,
@@ -44,7 +44,7 @@ userid IN (SELECT * FROM id_alunos)
 UNION
 SELECT * FROM mdl_logstore_standard_log WHERE action='loggedin' AND
 userid IN (SELECT * FROM id_alunos)) log;
-===========================================
+-- ===========================================
 /*  TABELA BASE */
 CREATE TABLE `ead`.`base` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -70,7 +70,7 @@ CREATE TABLE `ead`.`base` (
   `nascimento` DATETIME NULL,
   PRIMARY KEY (`id`));
 
-==========================================
+-- ===========================================
 
 update base set disciplina_id = (select id from moodle.mdl_course where moodle.mdl_course.idnumber = base.idnumber)
 where id >= 1;
@@ -78,12 +78,12 @@ where id >= 1;
 update base set aluno_id = (select id from moodle.mdl_user where moodle.mdl_user.username = base.username)
 where id >= 1;
 
-===========================================
+-- ===========================================
 
 /* Comando para o caso do Mysql 8.0.30 */
 SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
 
-===========================================
+-- ===========================================
 
 /*Criação de índices para melhorar o tempo de busca das informações*/
 create index idx_contextview on mdl_context (contextlevel);
@@ -94,10 +94,13 @@ create index idx_mdllogred on mdl_logstore_standard_log(userid,timecreated,cours
 create index idx_mdlmsn_read on mdl_message_read(useridfrom,timecreated);
 
 
-===========================================
+-- ===========================================
 /* Selects para busca dos dados */
-===========================================
+-- ===========================================
 /* Select completo com algumas mudanças para o caso de utilização com integração de CMS */
+
+set @data_inicio = unix_timestamp('2021-10-01 00:00:00');
+set @data_final = unix_timestamp('2021-11-30 23:59:59');
 
 SELECT 
 base.curso AS "Curso",
@@ -232,8 +235,9 @@ GROUP BY b.disciplina_id,b.aluno_id) AS var13d
 ON var13d.aluno_id = base.aluno_id AND var13d.disciplina_id = base.disciplina_id
 LEFT OUTER JOIN (SELECT d.courseid,d.userid, SUM(d.intervalo) AS "var17" 
 	FROM (SELECT c.courseid, c.userid, 
-									 CASE WHEN c.proxima_action="loggedin" THEN 0
+		CASE WHEN c.proxima_action="loggedin" THEN 0
 		WHEN c.proximo_time= NULL THEN 0
+                WHEN (c.proximo_time - c.timecreated) >= 28800 THEN 0
 		ELSE c.proximo_time - c.timecreated END AS "intervalo"
 			 FROM (SELECT a.id,a.courseid,a.userid,a.component,a.action,a.timecreated,b.action AS "proxima_action", b.timecreated AS "proximo_time" 
 			FROM 
@@ -313,13 +317,16 @@ FROM (select re.course, re.userid, avg(re.gradepercent) as gradepercent from
 INNER JOIN base b ON b.disciplina_id = tmp.course AND b.aluno_id = tmp.userid 
 GROUP BY b.disciplina_id, b.aluno_id) AS var34
 ON var34.disciplina_id = base.disciplina_id AND var34.aluno_id = base.aluno_id
-where base.semestre = '2018.1'
+where base.semestre = '2021.4'
 ORDER BY
 base.curso, base.semestre, base.periodo, base.disciplina_nome, base.aluno_nome
 --	)
 
-===========================================
+-- ===========================================
 /* Select reduzido apenas com as variáveis utilizadas no projeto e algumas mudanças para o caso de utilização com integração de CMS */
+
+set @data_inicio = unix_timestamp('2021-10-01 00:00:00');
+set @data_final = unix_timestamp('2021-11-30 23:59:59');
 
 SELECT 
 base.curso AS "Curso",
@@ -390,8 +397,9 @@ GROUP BY b.disciplina_id,b.aluno_id) AS var13d
 ON var13d.aluno_id = base.aluno_id AND var13d.disciplina_id = base.disciplina_id
 LEFT OUTER JOIN (SELECT d.courseid,d.userid, SUM(d.intervalo) AS "var17" 
 	FROM (SELECT c.courseid, c.userid, 
-									 CASE WHEN c.proxima_action="loggedin" THEN 0
+		CASE WHEN c.proxima_action="loggedin" THEN 0
 		WHEN c.proximo_time= NULL THEN 0
+                WHEN (c.proximo_time - c.timecreated) >= 28800 THEN 0
 		ELSE c.proximo_time - c.timecreated END AS "intervalo"
 			 FROM (SELECT a.id,a.courseid,a.userid,a.component,a.action,a.timecreated,b.action AS "proxima_action", b.timecreated AS "proximo_time" 
 			FROM 
@@ -465,7 +473,7 @@ FROM (select re.course, re.userid, avg(re.gradepercent) as gradepercent from
 INNER JOIN base b ON b.disciplina_id = tmp.course AND b.aluno_id = tmp.userid 
 GROUP BY b.disciplina_id, b.aluno_id) AS var34
 ON var34.disciplina_id = base.disciplina_id AND var34.aluno_id = base.aluno_id
-where base.semestre = '2021.2'
+where base.semestre = '2021.4'
 ORDER BY
 base.curso, base.semestre, base.periodo, base.disciplina_nome, base.aluno_nome
 --	)
