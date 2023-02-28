@@ -14,15 +14,15 @@ def pipinstall(name):
     subprocess.call(['pip', 'install', name])
 
 # Instalação de pacotes
-# pip install shap
-# pip install catboost
-# pip install BorutaShap
-# # Pacote para verificar outlier com a biblioteca PyOD
-# pip install pyod
+
+print('Instalando Pacote Shap...')
 pipinstall('shap')
+print('Instalando Pacote catboost...')
 pipinstall('catboost')
+print('Instalando Pacote BorutaShap...')
 pipinstall('BorutaShap')
 # Pacote para verificar outlier com a biblioteca PyOD
+print('Instalando Pacote Pyod para detecção de outlier...')
 pipinstall('pyod')
 
 # Importação de Pacotes
@@ -66,10 +66,12 @@ import copy
 
 pd.set_option('max_colwidth', -1)
 
+#######################################################################################################################
 """# Funções de apoio (utils) para as classes
 
 **Funções para Split e configuração de scores**
 """
+#######################################################################################################################
 
 def executargridsearch(model,params,X_,y_,scores='f1_macro',silent='N'):
   folds = config_experimento.num_folds
@@ -84,8 +86,6 @@ def executargridsearch(model,params,X_,y_,scores='f1_macro',silent='N'):
                                      cv=skf.split(X_,y_),
                                      verbose=3,
                                      random_state=42)
-  # random_search = GridSearchCV(model,param_grid = params,scoring='f1_macro',
-  #                               cv = skf.split(X_,y_),n_jobs=4,verbose=3)
 
   random_search.fit(X_, y_)
   if silent == 'N':
@@ -143,7 +143,9 @@ def set_scores_result(df_results, scores_result, model_name):
     df_results.loc[model_name, 
       vmetfresult[index]][1]=np.mean(scores_result[vmetteste[index]])
 
+#######################################################################################################################
 """**Funções para gerar gráficos**"""
+#######################################################################################################################
 
 def matriz_confusao(y_test, y_predict,modelo,nome):
     matriz_conf = confusion_matrix(y_test, y_predict)
@@ -179,7 +181,6 @@ def montargraficoevasao(dfnumevadidos,x_='curso',nomecurso=''):
 
   ax = dfnumevadidos.plot(x=x_,y=['evadidos','totalturma'],kind = 'bar',figsize=(20, 10),
                     fontsize=15,rot=15,color={'evadidos': 'tomato','totalturma':'lightblue'})
-  # plt.title("Situação de evasão por "+x_+" - "+nomecurso,fontdict=font)
 
   plt.ylabel("Qtde alunos",fontdict=font)
   plt.xlabel(x_,fontdict=font)
@@ -332,7 +333,9 @@ def plota_auc(y_testpred, previsao_mod):
   plt.legend(loc="lower right")
   plt.show()   # Display
 
+#######################################################################################################################
 """# Classe Singleton para configuração dos experimentos"""
+#######################################################################################################################
 
 class Configexperimento:
 
@@ -401,8 +404,9 @@ class Configexperimento:
 
 config_experimento = Configexperimento()
 
+#######################################################################################################################
 """# Classe para análise exploratória dos dados"""
-
+#######################################################################################################################
 class Engaja_analise_Expl:
   
   def __init__(self,nomevarevasao='situacao',
@@ -457,8 +461,9 @@ class Engaja_analise_Expl:
   def plota_hist_dados(self,df_):
     histplotX(df_.loc[:,config_experimento.featuresselecionadas])
 
+#######################################################################################################################
 """# Classes composite para Pré-processamento"""
-
+#######################################################################################################################
 import abc
 class Component(metaclass=abc.ABCMeta):
 
@@ -523,10 +528,11 @@ class Preprocessamento(Component):
       df_[nomecampo] = df_[nomecampo].replace(nome_ant,nome_novo)      
       return df_
 
+#######################################################################################################################
 """**Classe para detecção de outliers**
 (Detectando Outlier com Boxplot e biblioteca PyOD)
 """
-
+#######################################################################################################################
 class Engaja_outliers(Component):
 
   def __init__(self,df = None):
@@ -604,8 +610,9 @@ class Engaja_outliers(Component):
     else:
       return X_,y_
 
+#######################################################################################################################
 """**Classes de balanceamento e normalização de dados**"""
-
+#######################################################################################################################
 class Engaja_balanceamento(Component):
 
   def __init__(self):
@@ -651,8 +658,9 @@ class Engaja_normalizacao(Component):
 
     return X_,y_
 
+#######################################################################################################################
 """# Classe XAI com Shap (Gráficos)"""
-
+#######################################################################################################################
 class Engaja_Xai:
 
   def __init__(self,modelo,X_train,y_train):
@@ -869,8 +877,11 @@ class Engaja_Xai:
                   600 if frtsaving == 'png' else None)
     plt.show()
 
+#######################################################################################################################
+#######################################################################################################################
 """# Classe principal para o Arcabouco Engajamais"""
-
+#######################################################################################################################
+#######################################################################################################################
 class Engaja_mais:
 
   def __init__(self):
@@ -1167,9 +1178,6 @@ class Engaja_mais:
           if complotiter == 'S':
             plotresult(varprocess['vf1'],varprocess['vf1modelkfoldg'],"f1-score",section)
        
-    # if not(nomes == []):
-    #   self.df_results_crossval.loc[nomes,:] = self.df_results_crossval.loc[nomes,:]/30
-
     if not(vnomemodelo == []):
       self.__reg_hiperparams = self.__reg_hiperparams.append(vhiperparametro,
                                                              ignore_index=True, 
@@ -1231,8 +1239,9 @@ class Engaja_mais:
         as_index=False)['qtde'].count().sort_values(
             ['modelo','qtde'], ascending=False).to_html()))
 
+#######################################################################################################################
 """**Define Configurações padrões**"""
-
+#######################################################################################################################
 config_experimento.featuresselecionadas = ['med_ac_lti_sema_disc','tmp_medutil_semanahr','med_geral_ac_sema_aluno',
                         'med_ac_lti_aluno_sema_disc',
                         'qtde_reprov_disc',
@@ -1243,8 +1252,6 @@ config_experimento.featuresselecionadas = ['med_ac_lti_sema_disc','tmp_medutil_s
                         'med_ac_noite_sema_aluno','med_ac_madruga_sema_aluno']
 
 config_experimento.scores = ['accuracy','recall','f1','precision','roc_auc','recall_macro']
-
-"""**Adiciona os classificadores para treinamento e validação**"""
 
 ### Define os classificadores e suas configurações para uso no arcabouço ####
 reghiperparams = pd.DataFrame()
@@ -1346,3 +1353,5 @@ config_experimento.adiciona_modelo({'nome_classificador':'LGB',
                     'param_proba':'probability',
                     'check_additivity': True,
                     'dim_shapvalues': 0}})
+
+#######################################################################################################################
