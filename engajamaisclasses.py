@@ -9,12 +9,21 @@ Original file is located at
 # Instalar e importar Pacotes
 """
 
+import subprocess
+def pipinstall(name):
+    subprocess.call(['pip', 'install', name])
+
 # Instalação de pacotes
-!pip install shap
-!pip install catboost
-!pip install BorutaShap
+# pip install shap
+# pip install catboost
+# pip install BorutaShap
+# # Pacote para verificar outlier com a biblioteca PyOD
+# pip install pyod
+pipinstall('shap')
+pipinstall('catboost')
+pipinstall('BorutaShap')
 # Pacote para verificar outlier com a biblioteca PyOD
-!pip install pyod
+pipinstall('pyod')
 
 # Importação de Pacotes
 import pandas as pd
