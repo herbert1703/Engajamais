@@ -10,6 +10,8 @@ def pipinstall(name):
 
 # Instalação de pacotes
 
+print('Instalando versão 1.1.3 do scikit-learn')
+pipinstall('scikit-learn==1.1.3')
 print('Instalando Pacote Shap...')
 pipinstall('shap')
 print('Instalando Pacote catboost...')
