@@ -133,8 +133,7 @@ FROM
 		GROUP BY b.disciplina_id, b.aluno_id) AS VAR01
 	ON VAR01.disciplina_id = base.disciplina_id AND VAR01.aluno_id = base.aluno_id
 LEFT OUTER JOIN    
-(SELECT tmp.disciplina_id,sum(tmp.totgeral) as "var09" from 
-(SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "totgeral"
+(SELECT temp.disciplina_id,temp.aluno_id,temp.contextinstanceid, SUM(ROUND(temp.total)) AS "var09"
 FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
 	FROM base b
 	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
@@ -142,8 +141,7 @@ FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) A
 	(component = "mod_lti" AND action="viewed") ) l
 	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
 	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
-    GROUP BY temp.disciplina_id, temp.aluno_id)  as tmp
-    GROUP BY tmp.disciplina_id) as var09
+    GROUP BY temp.disciplina_id) AS var09
     ON var09.disciplina_id = base.disciplina_id
 	LEFT OUTER JOIN (SELECT b.disciplina_id,b.aluno_id, count(*) AS "var13a"
 		FROM base b
@@ -228,7 +226,7 @@ and log.timecreated BETWEEN @data_inicio and @data_final
 	GROUP BY b.disciplina_id,b.aluno_id,l.ip) AS temp
 GROUP BY temp.disciplina_id, temp.aluno_id) AS var24
 ON var24.disciplina_id = base.disciplina_id AND var24.aluno_id = base.aluno_id
-LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "var27"
+LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id,temp.contextinstanceid, SUM(ROUND(temp.total)) AS "var27"
 FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
 	FROM base b
 	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
@@ -341,8 +339,7 @@ GROUP BY temp.disciplina_id) AS var08
 ON var08.disciplina_id = base.disciplina_id
 
 LEFT OUTER JOIN    
-(SELECT tmp.disciplina_id,sum(tmp.totgeral) as "var09" from 
-(SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "totgeral"
+(SELECT temp.disciplina_id,temp.aluno_id,temp.contextinstanceid, SUM(ROUND(temp.total)) AS "var09"
 FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
 	FROM base b
 	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
@@ -350,10 +347,9 @@ FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) A
 	(component = "mod_lti" AND action="viewed") ) l
 	ON b.disciplina_id=l.courseid AND b.aluno_id=l.userid AND l.timecreated BETWEEN @data_inicio and @data_final
 	GROUP BY b.disciplina_id,b.aluno_id,l.component,contextinstanceid) AS temp
-    GROUP BY temp.disciplina_id, temp.aluno_id)  as tmp
-    GROUP BY tmp.disciplina_id) as var09
-    ON var09.disciplina_id = base.disciplina_id
-    
+    GROUP BY temp.disciplina_id) AS var09
+    ON var09.disciplina_id = base.disciplina_id    
+
 -- LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, ROUND(AVG(temp.total),2) AS "var10"
 -- 	FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
 -- 		FROM base b
@@ -454,7 +450,7 @@ and log.timecreated BETWEEN @data_inicio and @data_final
 	GROUP BY b.disciplina_id,b.aluno_id,l.ip) AS temp
 GROUP BY temp.disciplina_id, temp.aluno_id) AS var24
 ON var24.disciplina_id = base.disciplina_id AND var24.aluno_id = base.aluno_id
-LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id, ROUND(temp.total) AS "var27"
+LEFT OUTER JOIN (SELECT temp.disciplina_id,temp.aluno_id,temp.contextinstanceid, SUM(ROUND(temp.total)) AS "var27"
 FROM (SELECT b.disciplina_id,b.aluno_id, component,contextinstanceid, count(*) AS "total"
 	FROM base b
 	INNER JOIN (SELECT * FROM mdl_logstore_standard_log WHERE contextinstanceid>0 AND
