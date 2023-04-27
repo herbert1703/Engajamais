@@ -951,7 +951,7 @@ class Engaja_mais:
                         self.resultadosvalg[ix][metrica]))
 
   ########## Treino o modelo com todos os dados disponíveis ###########
-  def exec_treino_modelo(self,nomemodelo=None,section="Seção de Treino",params=None):
+  def exec_treino_modelo(self,nomemodelo,section,params=None):
       modeloxai = None
       modelogrid = None
       self.separaXy()
@@ -1175,19 +1175,6 @@ class Engaja_mais:
                                                              sort=False)
     self.__flgtreinorealiz = 1
 
-  ########## Retorna o melhor conjunto de hiperparâmetros e seu respectivo modelo ###########
-  def retorna_bestmodel(self):
-    if self.__flgtreinorealiz == 0:
-        print("Nenhum Modelo Validado")
-    else:
-        vbestmodel = self.df_results_crossval.reset_index(level=['CLF', 'SCORE'])
-        nomemodel = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
-                                 as_index=False)[1].sum().sort_values(1, ascending=False).head(1)['CLF'][1]
-        vbestparams = self.__reg_hiperparams.groupby(['modelo','hiperparam'],
-                                        as_index=False)['qtde'].count().sort_values(['modelo','qtde'],
-                                                                                    ascending=False).head(1)['hiperparam'][2]
-    return [nomemodel,vbestparams]
-
   ###################
   def __verificacrossval_modelo(self,nomemodelo):
     retorno = False
@@ -1195,7 +1182,7 @@ class Engaja_mais:
       if modelo['modelo'] == nomemodelo:
         retorno = True
     return retorno
-
+ 
   ###################
   def plota_iteracoescrossval(self,section,nomemodelo):
     for modelo in self.resultadosvalg:
