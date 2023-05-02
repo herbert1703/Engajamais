@@ -880,6 +880,7 @@ class Engaja_mais:
     self.preprocessamento = Preprocessamento()
     self.df_results_crossval = definedf_result()
     self.resultadosvalg=[]
+    self.resultbestmodel=[]
     self.modelosvalidados = []
     self.modeloxai = None
     self.analise_Xai = None
@@ -917,6 +918,7 @@ class Engaja_mais:
       self.preprocessamento.add(self.__normalizacao)
       self.separaXy()
       self.resultadosvalg=[]
+      self.resultbestmodel=[]
       self.reset_crossval = True
       print(self.X_.columns)
   
@@ -951,7 +953,7 @@ class Engaja_mais:
                         self.resultadosvalg[ix][metrica]))
 
   ########## Treino o modelo com todos os dados disponíveis ###########
-  def exec_treino_modelo(self,nomemodelo,section,params=None):
+  def exec_treino_modelo(self,nomemodelo=None,section="Seção de Treino",params=None):
       modeloxai = None
       modelogrid = None
       self.separaXy()
@@ -1031,6 +1033,7 @@ class Engaja_mais:
     if self.reset_crossval:
       self.df_results_crossval = definedf_result()
       self.resultadosvalg=[]
+      self.resultbestmodel=[]
       self.__reg_hiperparams = pd.DataFrame()
       self.modelosvalidados = []
     
@@ -1087,7 +1090,7 @@ class Engaja_mais:
 
             vnomemodelo.append(nome)
 
-            cv_results   = evaluate_model(modelo, X_cross, 
+            cv_results = evaluate_model(modelo, X_cross,
                                           y_cross,config_experimento.scores,
                                           n_splits=config_experimento.num_folds,
                                           n_repeats=config_experimento.n_repeats)
@@ -1165,6 +1168,11 @@ class Engaja_mais:
 
           self.resultadosvalg.append({'modelo':nome,'f1': varprocess['vf1'],
                                       'f1_test': varprocess['vf1modelkfoldg']})
+          self.resultbestmodel.append({'modelo':nome,'f1_score': varprocess['vf1modelkfold'],
+                                       'accuracy': varprocess['vaccmodelkfold'],
+                                       'precision':varprocess['vprecmodelkfold'],
+                                       'recall': varprocess['vrecallmodelkfold'],
+                                       'roc_auc': varprocess['vrocaucmodelkfold']})
 
           if complotiter == 'S':
             plotresult(varprocess['vf1'],varprocess['vf1modelkfoldg'],"f1-score",section)
@@ -1175,6 +1183,25 @@ class Engaja_mais:
                                                              sort=False)
     self.__flgtreinorealiz = 1
 
+  ########## Retorna o melhor conjunto de hiperparâmetros e seu respectivo modelo ###########
+  def retorna_bestmodel(self):
+    vnomemodel=""
+    if self.__flgtreinorealiz == 0:
+        print("Nenhum Modelo Validado")
+        return []
+    else:
+        vbestmodel = self.df_results_crossval.reset_index(level=['CLF', 'SCORE'])
+        vnomemodel = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
+                                 as_index=False)[1].sum().sort_values(1, ascending=False).head(1)['CLF'].values[0]
+        self.__reg_hiperparams['qtde'] = 0
+        vbestparams = self.__reg_hiperparams[self.__reg_hiperparams['modelo'] == vnomemodel].groupby(
+            ['modelo','hiperparam'],
+            as_index=False)['qtde'].count().sort_values(
+            ['modelo','qtde'],
+            ascending=False).head(1)['hiperparam'].values[0]
+
+    return [vnomemodel,vbestparams]
+
   ###################
   def __verificacrossval_modelo(self,nomemodelo):
     retorno = False
@@ -1182,7 +1209,7 @@ class Engaja_mais:
       if modelo['modelo'] == nomemodelo:
         retorno = True
     return retorno
- 
+
   ###################
   def plota_iteracoescrossval(self,section,nomemodelo):
     for modelo in self.resultadosvalg:
