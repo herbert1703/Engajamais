@@ -890,9 +890,9 @@ class Engaja_mais:
     self.X_train = None
     self.dfpredicteste = None
     self.reset_crossval = True
+    self.reg_hiperparams = pd.DataFrame()
     self.__balanceamento = Engaja_balanceamento()
     self.__normalizacao = Engaja_normalizacao()
-    self.__reg_hiperparams = pd.DataFrame()
     self.__flgtreinorealiz = 0
     self.__vnormmodeltr = None
     self.__modelotreinado = None
@@ -1034,7 +1034,7 @@ class Engaja_mais:
       self.df_results_crossval = definedf_result()
       self.resultadosvalg=[]
       self.resultbestmodel=[]
-      self.__reg_hiperparams = pd.DataFrame()
+      self.reg_hiperparams = pd.DataFrame()
       self.modelosvalidados = []
     
     self.separaXy()
@@ -1077,16 +1077,18 @@ class Engaja_mais:
             X_cross,y_cross = self.__balanceamento.realiza_operacao(
                 X_cross.copy(),y_cross.copy())
 
+            vhiper_temp = None
             if config_experimento.otimizahiperparametros:
-              modelgs = executargridsearch(modelo,
+                modelgs = executargridsearch(modelo,
                                           params,X_cross,
                                           y_cross,config_experimento.scores,'S')
-              modelo = modelgs.best_estimator_
-              vhiperparametro.append({'modelo':nome,
-                                      'hiperparam':str(modelgs.best_params_)})
+                modelo = modelgs.best_estimator_
+                vhiper_temp = {'modelo':nome,
+                                      'hiperparam':str(modelgs.best_params_)}
+
             else:
-              vhiperparametro.append({'modelo':nome,
-                                      'hiperparam':str(modelo.get_params())})
+                vhiper_temp = {'modelo':nome,
+                                      'hiperparam':str(modelo.get_params())}
 
             vnomemodelo.append(nome)
 
@@ -1141,7 +1143,12 @@ class Engaja_mais:
                   format(np.mean(vmelhormetricf1)),
                   "   Melhor predição teste f1-score: {:.5f}".
                   format(max(vmelhormetricf1)))
-          
+
+            vhiper_temp['best_train'] = max(cv_results['test_f1'])
+            vhiper_temp['best_test'] = max(vmelhormetricf1)
+
+          vhiperparametro.append(vhiper_temp)
+
           print('{:<10s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}'.
             format("Modelo","Acurácia","Std","Precisão","Recall","f1","ROC/AUC"))
           nomes.append(nome)
@@ -1178,7 +1185,7 @@ class Engaja_mais:
             plotresult(varprocess['vf1'],varprocess['vf1modelkfoldg'],"f1-score",section)
        
     if not(vnomemodelo == []):
-      self.__reg_hiperparams = self.__reg_hiperparams.append(vhiperparametro,
+      self.reg_hiperparams = self.reg_hiperparams.append(vhiperparametro,
                                                              ignore_index=True, 
                                                              sort=False)
     self.__flgtreinorealiz = 1
@@ -1193,8 +1200,8 @@ class Engaja_mais:
         vbestmodel = self.df_results_crossval.reset_index(level=['CLF', 'SCORE'])
         vnomemodel = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
                                  as_index=False)[1].sum().sort_values(1, ascending=False).head(1)['CLF'].values[0]
-        self.__reg_hiperparams['qtde'] = 0
-        vbestparams = self.__reg_hiperparams[self.__reg_hiperparams['modelo'] == vnomemodel].groupby(
+        self.reg_hiperparams['qtde'] = 0
+        vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
             ['modelo','hiperparam'],
             as_index=False)['qtde'].count().sort_values(
             ['modelo','qtde'],
@@ -1252,8 +1259,8 @@ class Engaja_mais:
   ########### Apresenta os melhores hiperparâmetros do treinamento ##########  
   def lista_melhores_hiperp(self):
     # Melhores hiperparametros
-    self.__reg_hiperparams['qtde'] = 0
-    display(HTML(self.__reg_hiperparams.groupby(['modelo','hiperparam'],
+    self.reg_hiperparams['qtde'] = 0
+    display(HTML(self.reg_hiperparams.groupby(['modelo','hiperparam'],
         as_index=False)['qtde'].count().sort_values(
             ['modelo','qtde'], ascending=False).to_html()))
 
