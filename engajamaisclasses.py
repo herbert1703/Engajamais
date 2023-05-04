@@ -1146,8 +1146,7 @@ class Engaja_mais:
 
             vhiper_temp['best_train'] = max(cv_results['test_f1'])
             vhiper_temp['best_test'] = max(vmelhormetricf1)
-
-          vhiperparametro.append(vhiper_temp)
+            vhiperparametro.append(vhiper_temp)
 
           print('{:<10s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}'.
             format("Modelo","Acurácia","Std","Precisão","Recall","f1","ROC/AUC"))
