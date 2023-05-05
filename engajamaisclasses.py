@@ -1202,8 +1202,8 @@ class Engaja_mais:
         self.reg_hiperparams['qtde'] = 0
         vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
             ['modelo','hiperparam'],
-            as_index=False)['qtde'].count().sort_values(
-            ['modelo','qtde'],
+            as_index=False)['best_test'].mean().sort_values(
+            ['modelo','best_test'],
             ascending=False).head(1)['hiperparam'].values[0]
 
     return [vnomemodel,vbestparams]
@@ -1260,8 +1260,8 @@ class Engaja_mais:
     # Melhores hiperparametros
     self.reg_hiperparams['qtde'] = 0
     display(HTML(self.reg_hiperparams.groupby(['modelo','hiperparam'],
-        as_index=False)['qtde'].count().sort_values(
-            ['modelo','qtde'], ascending=False).to_html()))
+        as_index=False)['best_test'].mean().sort_values(
+            ['modelo','best_test'], ascending=False).to_html()))
 
 #######################################################################################################################
 # Definição das Configurações padrões
