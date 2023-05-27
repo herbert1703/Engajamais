@@ -221,7 +221,8 @@ def graficoevasao_periodo(df_,nomevar_y = 'situacao'):
 def boxplot_sorted(modelos_,resultadosmodel, metric, by=['Technique'], 
                    rot=90, figsize=(18,8), fontsize=24, section=''):
     df2  = pd.DataFrame({modelos_[i]:resultadosmodel[i]
-                         [metric] for i in range(0,len(modelos_))})
+                                     [metric] for i in range(0,len(modelos_))})
+    df2 = df2.round(decimals=4)
     meds = df2.median().sort_values(ascending=False)
     axes = df2[meds.index].boxplot(figsize=figsize, rot=rot, 
                                    fontsize=fontsize,
@@ -1148,25 +1149,35 @@ class Engaja_mais:
             vhiper_temp['best_test'] = max(vmelhormetricf1)
             vhiperparametro.append(vhiper_temp)
 
-          print('{:<10s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}'.
-            format("Modelo","Acurácia","Std","Precisão","Recall","f1","ROC/AUC"))
+          print('{:<24s} {:>17s} {:>10s} {:>17s} {:>17s} {:>17s} {:>17s}'.
+            format("Modelo com Média/Mediana","Acurácia","Std","Precisão","Recall","f1","ROC/AUC"))
           nomes.append(nome)
-          msg = "{:<10s} {:12f} {:12f} {:12f} {:12f} {:12f} {:12f}".format(nome,
+          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f}".format(nome,
                                   np.mean(varprocess['vacuracia']),
+                                  np.median(varprocess['vacuracia']),
                                   np.std(varprocess['vacuracia']),
                                   np.mean(varprocess['vprecisao']),
+                                  np.median(varprocess['vprecisao']),
                                   np.mean(varprocess['vrecall']),
+                                  np.median(varprocess['vrecall']),
                                   np.mean(varprocess['vf1']),
-                                  np.mean(varprocess['vroc']))
+                                  np.median(varprocess['vf1']),
+                                  np.mean(varprocess['vroc']),
+                                  np.median(varprocess['vroc']))
           print(msg)
-          msg = '{:<10s} {:12f} {:12f} {:12f} {:12f} {:12f} {:12f}'.format(
+          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f}".format(
                                   nome+" Teste",
                                   np.mean(varprocess['vaccmodelkfold']),
+                                  np.median(varprocess['vaccmodelkfold']),
                                   np.std(varprocess['vaccmodelkfold']),
                                   np.mean(varprocess['vprecmodelkfold']),
+                                  np.median(varprocess['vprecmodelkfold']),
                                   np.mean(varprocess['vrecallmodelkfold']),
+                                  np.median(varprocess['vrecallmodelkfold']),
                                   np.mean(varprocess['vf1modelkfold']),
-                                  np.mean(varprocess['vrocaucmodelkfold']))
+                                  np.median(varprocess['vf1modelkfold']),
+                                  np.mean(varprocess['vrocaucmodelkfold']),
+                                  np.median(varprocess['vrocaucmodelkfold']))
           
           set_scores_result(self.df_results_crossval, varprocess, nome)
 
