@@ -173,9 +173,9 @@ def montargraficoevasao(dfnumevadidos,x_='curso',nomecurso=''):
                               'font.weight': 'bold','font.size': 20})
 
   ax = dfnumevadidos.plot(x=x_,y=['evadidos','totalturma'],kind = 'bar',figsize=(20, 10),
-                    fontsize=15,rot=15,color={'evadidos': 'tomato','totalturma':'lightblue'})
+                    fontsize=15,rot=15,color={'evadidos': 'red','totalturma':'dodgerblue'})
 
-  plt.ylabel("Qtde alunos",fontdict=font)
+  plt.ylabel("Quantidade de alunos",fontdict=font)
   plt.xlabel(x_,fontdict=font)
   x_offset = -0.08
   y_offset = 0.50
