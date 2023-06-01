@@ -173,7 +173,7 @@ def montargraficoevasao(dfnumevadidos,x_='curso',nomecurso=''):
                               'font.weight': 'bold','font.size': 20})
 
   ax = dfnumevadidos.plot(x=x_,y=['evadidos','totalturma'],kind = 'bar',figsize=(20, 10),
-                    fontsize=15,rot=15,color={'evadidos': 'red','totalturma':'dodgerblue'})
+                    fontsize=15,rot=15,color={'evadidos': '#ff0051','totalturma':'#008bfb'})
 
   plt.ylabel("Quantidade de alunos",fontdict=font)
   plt.xlabel(x_,fontdict=font)
@@ -1234,16 +1234,22 @@ class Engaja_mais:
         plotresult(modelo['f1'],modelo['f1_test'],"f1-score",section)
   
   ###################
-  def plota_boxplotcrossval(self,section):
+  '''tp = 1, plota a mediana de todos os testes. tp = 2 plota a mediana dos melhores hiperparametros'''
+  def plota_boxplotcrossval(self,section,tp=1):
     if self.__flgtreinorealiz == 0:
       self.executa_cross_val_dados(section)
 
-    boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
+    if tp == 1:
+        boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
                    'f1',figsize=(25,10),
                   fontsize=24,rot=90,section=section,by=['Modelo'])
-    boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
+        boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
                    'f1_test',figsize=(25,10),
                   fontsize=24,rot=90,section=section,by=['Modelo'])
+    else:
+        boxplot_sorted(self.modelosvalidados, self.resultbestmodel,
+                       'f1_score', figsize=(25, 10),
+                       fontsize=24, rot=90, section=section, by=['Modelo'])
 
 
   #####Executa método Wrapper BorutaShap para importância de atributos#####
