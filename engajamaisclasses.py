@@ -1149,33 +1149,33 @@ class Engaja_mais:
             vhiper_temp['best_test'] = max(vmelhormetricf1)
             vhiperparametro.append(vhiper_temp)
 
-          print('{:<24s} {:>17s} {:>10s} {:>17s} {:>17s} {:>17s} {:>17s}'.
-            format("Modelo com Média/Mediana","Acurácia","Std","Precisão","Recall","f1","ROC/AUC"))
+          print('{:<24s} {:>17s} {:>17s} {:>17s} {:>17s} {:>10s} {:>17s}'.
+            format("Modelo com Média/Mediana","Acurácia","Precisão","Recall","f1","Std_f1","ROC/AUC"))
           nomes.append(nome)
-          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f}".format(nome,
+          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f}".format(nome,
                                   np.mean(varprocess['vacuracia']),
                                   np.median(varprocess['vacuracia']),
-                                  np.std(varprocess['vacuracia']),
                                   np.mean(varprocess['vprecisao']),
                                   np.median(varprocess['vprecisao']),
                                   np.mean(varprocess['vrecall']),
                                   np.median(varprocess['vrecall']),
                                   np.mean(varprocess['vf1']),
                                   np.median(varprocess['vf1']),
+                                  np.std(varprocess['vf1']),
                                   np.mean(varprocess['vroc']),
                                   np.median(varprocess['vroc']))
           print(msg)
-          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f}".format(
+          msg = "{:<24s} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f}/{:6.4f} {:10.4f} {:10.4f}/{:6.4f}".format(
                                   nome+" Teste",
                                   np.mean(varprocess['vaccmodelkfold']),
                                   np.median(varprocess['vaccmodelkfold']),
-                                  np.std(varprocess['vaccmodelkfold']),
                                   np.mean(varprocess['vprecmodelkfold']),
                                   np.median(varprocess['vprecmodelkfold']),
                                   np.mean(varprocess['vrecallmodelkfold']),
                                   np.median(varprocess['vrecallmodelkfold']),
                                   np.mean(varprocess['vf1modelkfold']),
                                   np.median(varprocess['vf1modelkfold']),
+                                  np.std(varprocess['vf1modelkfold']),
                                   np.mean(varprocess['vrocaucmodelkfold']),
                                   np.median(varprocess['vrocaucmodelkfold']))
           
@@ -1235,7 +1235,7 @@ class Engaja_mais:
   
   ###################
   '''tp = 1, plota a mediana de todos os testes. tp = 2 plota a mediana dos melhores hiperparametros'''
-  def plota_boxplotcrossval(self,section,tp=1):
+  def plota_boxplotcrossval(self,section,tp=2):
     if self.__flgtreinorealiz == 0:
       self.executa_cross_val_dados(section)
 
