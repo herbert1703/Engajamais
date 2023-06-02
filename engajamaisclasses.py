@@ -63,6 +63,9 @@ import copy
 
 pd.set_option('max_colwidth', -1)
 
+plt.rcParams.update({'font.family': 'sans-serif',
+                     'font.weight': 'bold', 'font.size': 10})
+
 #######################################################################################################################
 # Funções de apoio (utils) para as classes
 #######################################################################################################################
@@ -135,9 +138,9 @@ def set_scores_result(df_results, scores_result, model_name):
 
   for index in range(len(vmetfresult)):
     df_results.loc[model_name, 
-      vmetfresult[index]][0]=np.mean(scores_result[vmetcross[index]])
+      vmetfresult[index]][0]=np.median(scores_result[vmetcross[index]])
     df_results.loc[model_name, 
-      vmetfresult[index]][1]=np.mean(scores_result[vmetteste[index]])
+      vmetfresult[index]][1]=np.median(scores_result[vmetteste[index]])
 
 """**Funções para gerar gráficos**"""
 def matriz_confusao(y_test, y_predict,modelo,nome):
@@ -268,8 +271,6 @@ def plotresult(crossval, tests, metrica,section=''):
   plt.close()
 
 def histplotX(X_):
-  plt.rcParams.update({'font.family' :'sans-serif',
-                       'font.weight': 'bold','font.size': 10})
 
   vnrows = math.ceil(len(X_.columns)/4)
   fig, axes = plt.subplots(nrows = vnrows, ncols = 4)
@@ -942,15 +943,24 @@ class Engaja_mais:
       self.salva_df(self.reg_hiperparams,
                              pastadest + 'df_best_hiperpar_resultados_' + nomearq + '.xlsx')
       #### Salva os resultados da validação cruzada para todas as iterações de todos os modelos testados ###
-      vtodostestes = pd.DataFrame({self.modelosvalidados[i] + '_test': self.resultadosvalg[i]
+      vtodostestes = pd.DataFrame({self.modelosvalidados[i]: self.resultadosvalg[i]
       ['f1_test'] for i in range(0, len(self.modelosvalidados))})
       self.salva_df(vtodostestes,
                              pastadest + 'df_todos_resultados_' + nomearq + '.xlsx')
       #### Salva os melhores resultados da validação cruzada para todos os modelos testados ###
-      vbesttestes = pd.DataFrame({self.modelosvalidados[i] + '_test': self.resultbestmodel[i]
+      vbesttestes = pd.DataFrame({self.modelosvalidados[i]: self.resultbestmodel[i]
       ['f1_score'] for i in range(0, len(self.modelosvalidados))})
       self.salva_df(vbesttestes,
                              pastadest + 'df_best_resultados_' + nomearq + '.xlsx')
+
+  def exibe_estat_metricas(self):
+    #### Verifica se tem algum modelo já validado
+    if self.modelosvalidados != []:
+        resultmetricas = self.resultbestmodel
+        df_metricas = pd.DataFrame({self.modelosvalidados[i]: resultmetricas[i]
+        ['f1_score'] for i in range(0, len(self.modelosvalidados))})
+        display(HTML(df_metricas.describe().T.to_html()))
+
 
   ########################
   def salva_modelo(self,filename):
