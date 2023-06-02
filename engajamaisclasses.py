@@ -936,7 +936,22 @@ class Engaja_mais:
       dataframe.to_excel(nomearq,float_format="%.3f", index=False)
     else:
       dataframe.to_csv(nomearq,index=False)
-  
+
+  def gravametricasf1_score(self,pastadest='', nomearq='UNIVALE'):
+      #### Salva os melhores hiperparâmetros da validação cruzada para todos os modelos tesados ###
+      self.salva_df(self.reg_hiperparams,
+                             pastadest + 'df_best_hiperpar_resultados_' + nomearq + '.xlsx')
+      #### Salva os resultados da validação cruzada para todas as iterações de todos os modelos testados ###
+      vtodostestes = pd.DataFrame({self.modelosvalidados[i] + '_test': self.resultadosvalg[i]
+      ['f1_test'] for i in range(0, len(self.modelosvalidados))})
+      self.salva_df(vtodostestes,
+                             pastadest + 'df_todos_resultados_' + nomearq + '.xlsx')
+      #### Salva os melhores resultados da validação cruzada para todos os modelos testados ###
+      vbesttestes = pd.DataFrame({self.modelosvalidados[i] + '_test': self.resultbestmodel[i]
+      ['f1_score'] for i in range(0, len(self.modelosvalidados))})
+      self.salva_df(vbesttestes,
+                             pastadest + 'df_best_resultados_' + nomearq + '.xlsx')
+
   ########################
   def salva_modelo(self,filename):
     if not(self.modeloxai is None):
