@@ -218,10 +218,13 @@ def graficoevasao_periodo(df_,nomevar_y = 'situacao'):
   ax.legend(['% Evadidos'])
   plt.show()
 
-def boxplot_sorted(modelos_,resultadosmodel, metric, by=['Technique'], 
-                   rot=90, figsize=(18,8), fontsize=24, section=''):
-    df2  = pd.DataFrame({modelos_[i]:resultadosmodel[i]
+def boxplot_sorted(modelos_,resultadosmodel, metric='f1_score', by=['Technique'],
+                   rot=90, figsize=(18,8), fontsize=24, section='',df_definido=None):
+    if df_definido is None:
+        df2 = pd.DataFrame({modelos_[i]:resultadosmodel[i]
                                      [metric] for i in range(0,len(modelos_))})
+    else:
+        df2 = df_definido
     df2 = df2.round(decimals=4)
     meds = df2.median().sort_values(ascending=False)
     axes = df2[meds.index].boxplot(figsize=figsize, rot=rot, 
@@ -582,7 +585,7 @@ class Engaja_outliers(Component):
       print('Sem dados para salvar. Chame o método "realiza_operacao" '+
       'para gerar a lista')
     else:
-      self.lista_outliers.to_excel(nomearquivo,float_format="%.3f",  encoding = 'utf8')
+      self.lista_outliers.to_excel(nomearquivo,float_format="%.3f", encoding = 'utf8')
       print('Lista de outliers salva com sucesso no arquivo "'+nomearquivo+'"')
   
   def remove_outliers(self):
@@ -930,7 +933,7 @@ class Engaja_mais:
   ########################
   def salva_df(self,dataframe,nomearq,tipoarquivo='xlsx'):
     if tipoarquivo == 'xlsx':
-      dataframe.to_excel(nomearq,float_format="%.3f")
+      dataframe.to_excel(nomearq,float_format="%.3f", index=False)
     else:
       dataframe.to_csv(nomearq,index=False)
   
@@ -1235,21 +1238,28 @@ class Engaja_mais:
   
   ###################
   '''tp = 1, plota a mediana de todos os testes. tp = 2 plota a mediana dos melhores hiperparametros'''
-  def plota_boxplotcrossval(self,section,tp=2):
-    if self.__flgtreinorealiz == 0:
-      self.executa_cross_val_dados(section)
+  def plota_boxplotcrossval(self,section,tp=2,df_param=None):
 
-    if tp == 1:
-        boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
-                   'f1',figsize=(25,10),
-                  fontsize=24,rot=90,section=section,by=['Modelo'])
-        boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
-                   'f1_test',figsize=(25,10),
-                  fontsize=24,rot=90,section=section,by=['Modelo'])
+    if df_param is None:
+        if self.__flgtreinorealiz == 0:
+            self.executa_cross_val_dados(section)
+
+        if tp == 1:
+            boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
+                       'f1',figsize=(25,10),
+                      fontsize=24,rot=90,section=section,by=['Modelo'])
+            boxplot_sorted(self.modelosvalidados,self.resultadosvalg,
+                       'f1_test',figsize=(25,10),
+                      fontsize=24,rot=90,section=section,by=['Modelo'])
+        else:
+            boxplot_sorted(self.modelosvalidados, self.resultbestmodel,
+                           'f1_score', figsize=(25, 10),
+                           fontsize=24, rot=90, section=section, by=['Modelo'])
     else:
         boxplot_sorted(self.modelosvalidados, self.resultbestmodel,
                        'f1_score', figsize=(25, 10),
-                       fontsize=24, rot=90, section=section, by=['Modelo'])
+                       fontsize=24, rot=90, section=section, by=['Modelo'], df_definido=df_param)
+
 
 
   #####Executa método Wrapper BorutaShap para importância de atributos#####
