@@ -1008,7 +1008,8 @@ class Engaja_mais:
               modelogrid = executargridsearch(self.modeloxai,param,
                                               X_train,y_train)
               self.modeloxai = modelogrid.best_estimator_
-      
+          break
+
       print(self.modeloxai)
       self.modeloxai.fit(X_train,y_train)
       self.analise_Xai = Engaja_Xai(self.modeloxai,X_train,y_train)
