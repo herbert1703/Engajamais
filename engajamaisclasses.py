@@ -1252,11 +1252,19 @@ class Engaja_mais:
                                                         as_index=False)[1].sum().sort_values(1, ascending=False)
         vlstparams = []
         for (i,row) in self.lst_melhores_modelos.iterrows():
-            vlstparams.append(self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
+            vpar = self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
+                ['modelo', 'hiperparam'],
+                as_index=False)['best_test'].median().sort_values(
+                ['modelo', 'best_test'],
+                ascending=False).head(1)['hiperparam'].count()
+            if vpar > 0:
+                vlstparams.append(self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
                 ['modelo', 'hiperparam'],
                 as_index=False)['best_test'].median().sort_values(
                 ['modelo', 'best_test'],
                 ascending=False).head(1)['hiperparam'].values[0])
+            else:
+                vlstparams.append('')
 
         self.lst_melhores_modelos['params'] = vlstparams
 
