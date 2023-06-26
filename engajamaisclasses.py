@@ -897,6 +897,7 @@ class Engaja_mais:
     self.reset_crossval = True
     self.reg_hiperparams = pd.DataFrame()
     self.lst_melhores_modelos = pd.DataFrame()
+    self.lst_test_modelos = []
     self.__balanceamento = Engaja_balanceamento()
     self.__normalizacao = Engaja_normalizacao()
     self.__flgtreinorealiz = 0
@@ -1057,6 +1058,7 @@ class Engaja_mais:
       self.dfpredicteste["proba_1"] = self.dfpredicteste[
           "proba_1"].map('{:.4f}'.format)
       print("Concluído!")
+      self.lst_test_modelos.append(vtestes)
       return vtestes
     else:
       print('Nenhum modelo treinado! Execute a Função "treina_modelo"')
@@ -1234,13 +1236,41 @@ class Engaja_mais:
     self.__flgtreinorealiz = 1
 
   ########## Retorna o melhor conjunto de hiperparâmetros e seu respectivo modelo ###########
-  def retorna_bestmodel(self):
+  def retorna_bestmodel(self,tiporetorno='Treino'):
     vnomemodel=""
-    if self.__flgtreinorealiz == 0:
+
+    if (tiporetorno == "Treino") and  (self.__flgtreinorealiz == 0):
         print("Nenhum Modelo Validado")
         return []
     else:
-        vbestmodel = self.df_results_crossval.reset_index(level=['CLF', 'SCORE'])
+        if self.lst_test_modelos == []:
+            print("Nenhum Modelo Testado")
+            return []
+
+    vbestmodel = self.df_results_crossval.reset_index(level=['CLF', 'SCORE'])
+
+    self.lst_melhores_modelos = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
+                                                                                as_index=False)[1].sum().sort_values(1,
+                                                                                                                     ascending=False)
+    vlstparams = []
+    for (i, row) in self.lst_melhores_modelos.iterrows():
+        vpar = self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
+            ['modelo', 'hiperparam'],
+            as_index=False)['best_test'].median().sort_values(
+            ['modelo', 'best_test'],
+            ascending=False).head(1)['hiperparam'].count()
+        if vpar > 0:
+            vlstparams.append(self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
+                ['modelo', 'hiperparam'],
+                as_index=False)['best_test'].median().sort_values(
+                ['modelo', 'best_test'],
+                ascending=False).head(1)['hiperparam'].values[0])
+        else:
+            vlstparams.append('')
+
+    self.lst_melhores_modelos['params'] = vlstparams
+
+    if tiporetorno == 'Treino':
         vnomemodel = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
                                  as_index=False)[1].sum().sort_values(1, ascending=False).head(1)['CLF'].values[0]
         self.reg_hiperparams['qtde'] = 0
@@ -1249,27 +1279,27 @@ class Engaja_mais:
             as_index=False)['best_test'].median().sort_values(
             ['modelo','best_test'],
             ascending=False).head(1)['hiperparam'].values[0]
+    else:
+        vprec_teste = []
+        vrecall_teste = []
+        vf1_teste = []
+        for i in self.lst_test_modelos:
+            vprec_teste.append(i['1']['precision'])
+            vrecall_teste.append(i['1']['recall'])
+            vf1_teste.append(i['macro avg']['f1-score'])
 
-        self.lst_melhores_modelos = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
-                                                        as_index=False)[1].sum().sort_values(1, ascending=False)
-        vlstparams = []
-        for (i,row) in self.lst_melhores_modelos.iterrows():
-            vpar = self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
-                ['modelo', 'hiperparam'],
-                as_index=False)['best_test'].median().sort_values(
-                ['modelo', 'best_test'],
-                ascending=False).head(1)['hiperparam'].count()
-            if vpar > 0:
-                vlstparams.append(self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
-                ['modelo', 'hiperparam'],
-                as_index=False)['best_test'].median().sort_values(
-                ['modelo', 'best_test'],
-                ascending=False).head(1)['hiperparam'].values[0])
-            else:
-                vlstparams.append('')
+        self.lst_melhores_modelos['precision_cls_1'] = vprec_teste
+        self.lst_melhores_modelos['recall_cls_1'] = vrecall_teste
+        self.lst_melhores_modelos['f1_score_cls_1'] = vf1_teste
 
-        self.lst_melhores_modelos['params'] = vlstparams
-
+        vnomemodel = self.lst_melhores_modelos.groupby(['CLF'],
+                                as_index=False)['f1_score_cls_1'].sum().sort_values('f1_score_cls_1',
+                                                                              ascending=False).head(1)['CLF'].values[0]
+        vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
+            ['modelo', 'hiperparam'],
+            as_index=False)['best_test'].median().sort_values(
+            ['modelo', 'best_test'],
+            ascending=False).head(1)['hiperparam'].values[0]
 
     return [vnomemodel,vbestparams]
 
