@@ -1284,7 +1284,7 @@ class Engaja_mais:
         vprec_teste = []
         vrecall_teste = []
         vf1_teste = []
-        for i in self.lst_melhores_modelos:
+        for i in self.lst_melhores_modelos.iterrows():
             vprec_teste.append(0)
             vrecall_teste.append(0)
             vf1_teste.append(0)
