@@ -1303,12 +1303,12 @@ class Engaja_mais:
         self.lst_melhores_modelos['precision_cls_0'] = vprec_0_teste
         self.lst_melhores_modelos['recall_cls_0'] = vrecall_0_teste
 
-        self.lst_melhores_modelos['precision_cls_1'] = vprec_0_teste
-        self.lst_melhores_modelos['recall_cls_1'] = vrecall_0_teste
+        self.lst_melhores_modelos['precision_cls_1'] = vprec_1_teste
+        self.lst_melhores_modelos['recall_cls_1'] = vrecall_1_teste
         self.lst_melhores_modelos['f1_score_cls_geral'] = vf1_teste
 
         vnomemodel = self.lst_melhores_modelos.groupby(['CLF'],
-                                as_index=False)['f1_score_cls_1'].sum().sort_values('f1_score_cls_1',
+                                as_index=False)['f1_score_cls_geral'].sum().sort_values('f1_score_cls_geral',
                                                                               ascending=False).head(1)['CLF'].values[0]
 
         vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
