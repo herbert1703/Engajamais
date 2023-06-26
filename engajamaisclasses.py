@@ -1239,9 +1239,10 @@ class Engaja_mais:
   def retorna_bestmodel(self,tiporetorno='Treino'):
     vnomemodel=""
 
-    if (tiporetorno == "Treino") and  (self.__flgtreinorealiz == 0):
-        print("Nenhum Modelo Validado")
-        return []
+    if (tiporetorno == "Treino"):
+        if (self.__flgtreinorealiz == 0):
+            print("Nenhum Modelo Validado")
+            return []
     else:
         if self.lst_test_modelos == []:
             print("Nenhum Modelo Testado")
