@@ -1281,30 +1281,39 @@ class Engaja_mais:
             ['modelo','best_test'],
             ascending=False).head(1)['hiperparam'].values[0]
     else:
-        vprec_teste = []
-        vrecall_teste = []
+        vprec_0_teste = []
+        vrecall_0_teste = []
+        vprec_1_teste = []
+        vrecall_1_teste = []
         vf1_teste = []
         for i in self.lst_melhores_modelos.iterrows():
-            vprec_teste.append(0)
-            vrecall_teste.append(0)
+            vprec_0_teste.append(0)
+            vrecall_0_teste.append(0)
+            vprec_1_teste.append(0)
+            vrecall_1_teste.append(0)
             vf1_teste.append(0)
 
         for i,x in enumerate(self.lst_test_modelos):
-            vprec_teste[i]=x['1']['precision']
-            vrecall_teste[i]=x['1']['recall']
+            vprec_0_teste[i] = x['0']['precision']
+            vrecall_0_teste[i] = x['0']['recall']
+            vprec_1_teste[i]=x['1']['precision']
+            vrecall_1_teste[i]=x['1']['recall']
             vf1_teste[i]=x['macro avg']['f1-score']
 
-        self.lst_melhores_modelos['precision_cls_1'] = vprec_teste
-        self.lst_melhores_modelos['recall_cls_1'] = vrecall_teste
-        self.lst_melhores_modelos['f1_score_cls_1'] = vf1_teste
+        self.lst_melhores_modelos['precision_cls_0'] = vprec_0_teste
+        self.lst_melhores_modelos['recall_cls_0'] = vrecall_0_teste
+
+        self.lst_melhores_modelos['precision_cls_1'] = vprec_0_teste
+        self.lst_melhores_modelos['recall_cls_1'] = vrecall_0_teste
+        self.lst_melhores_modelos['f1_score_cls_geral'] = vf1_teste
 
         vnomemodel = self.lst_melhores_modelos.groupby(['CLF'],
                                 as_index=False)['f1_score_cls_1'].sum().sort_values('f1_score_cls_1',
                                                                               ascending=False).head(1)['CLF'].values[0]
+
         vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
             ['modelo', 'hiperparam'],
-            as_index=False)['best_test'].median().sort_values(
-            ['modelo', 'best_test'],
+            as_index=False)['best_test'].median().sort_values(['modelo', 'best_test'],
             ascending=False).head(1)['hiperparam'].values[0]
 
     return [vnomemodel,vbestparams]
