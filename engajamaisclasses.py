@@ -1380,7 +1380,7 @@ config_experimento.adiciona_modelo({'nome_classificador':'RF',
                     'tipo_explainer': 'tree',
                     'param_proba':'probability',
                     'check_additivity': False,
-                    'dim_shapvalues': 0}})
+                    'dim_shapvalues': 1}})
 
 config_experimento.adiciona_modelo({'nome_classificador':'XGB',
                 'classificador': XGBClassifier(), 
