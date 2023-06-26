@@ -896,11 +896,13 @@ class Engaja_mais:
     self.dfpredicteste = None
     self.reset_crossval = True
     self.reg_hiperparams = pd.DataFrame()
+    self.lst_melhores_modelos = pd.DataFrame()
     self.__balanceamento = Engaja_balanceamento()
     self.__normalizacao = Engaja_normalizacao()
     self.__flgtreinorealiz = 0
     self.__vnormmodeltr = None
     self.__modelotreinado = None
+
 
   ##### Funções para manipulação de arquivo #####
   def carrega_arq_treino(self,nomearquivo,tipoarquivo='csv',separador=';',
@@ -1245,6 +1247,19 @@ class Engaja_mais:
             as_index=False)['best_test'].median().sort_values(
             ['modelo','best_test'],
             ascending=False).head(1)['hiperparam'].values[0]
+
+        self.lst_melhores_modelos = vbestmodel[vbestmodel['SCORE'] == 'f1'].groupby(['CLF'],
+                                                        as_index=False)[1].sum().sort_values(1, ascending=False)
+        vlstparams = []
+        for (i,row) in self.lst_melhores_modelos.iterrows():
+            vlstparams.append(self.reg_hiperparams[self.reg_hiperparams['modelo'] == row['CLF']].groupby(
+                ['modelo', 'hiperparam'],
+                as_index=False)['best_test'].median().sort_values(
+                ['modelo', 'best_test'],
+                ascending=False).head(1)['hiperparam'].values[0])
+
+        self.lst_melhores_modelos['params'] = vlstparams
+
 
     return [vnomemodel,vbestparams]
 
