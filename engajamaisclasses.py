@@ -1057,8 +1057,10 @@ class Engaja_mais:
       self.dfpredicteste["proba_1"] = self.dfpredicteste[
           "proba_1"].map('{:.4f}'.format)
       print("Concluído!")
+      return vtestes
     else:
       print('Nenhum modelo treinado! Execute a Função "treina_modelo"')
+      return {}
 
   ########## Executa CrossValidation nos dados de treinamento ###########
   def exec_crossval_dados(self,section="Experimento I",complotiter = 'S'):
