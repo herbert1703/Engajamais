@@ -1284,10 +1284,15 @@ class Engaja_mais:
         vprec_teste = []
         vrecall_teste = []
         vf1_teste = []
-        for i in self.lst_test_modelos:
-            vprec_teste.append(i['1']['precision'])
-            vrecall_teste.append(i['1']['recall'])
-            vf1_teste.append(i['macro avg']['f1-score'])
+        for i in self.lst_melhores_modelos:
+            vprec_teste.append(0)
+            vrecall_teste.append(0)
+            vf1_teste.append(0)
+
+        for i,x in enumerate(self.lst_test_modelos):
+            vprec_teste[i]=x['1']['precision']
+            vrecall_teste[i]=x['1']['recall']
+            vf1_teste[i]=x['macro avg']['f1-score']
 
         self.lst_melhores_modelos['precision_cls_1'] = vprec_teste
         self.lst_melhores_modelos['recall_cls_1'] = vrecall_teste
