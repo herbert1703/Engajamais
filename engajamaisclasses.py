@@ -1312,14 +1312,14 @@ class Engaja_mais:
             vroc_auc.append(0)
 
         for i,x in enumerate(self.lst_test_modelos):
-            vprec_0_teste[i] = x['modelo']['result_test']['0']['precision']
-            vrecall_0_teste[i] = x['modelo']['result_test']['0']['recall']
-            vprec_1_teste[i]=x['modelo']['result_test']['1']['precision']
-            vrecall_1_teste[i]=x['modelo']['result_test']['1']['recall']
-            vf1_teste[i]=x['modelo']['result_test']['macro avg']['f1-score']
-            vprec_teste[i]=x['modelo']['result_test']['macro avg']['precision']
-            vrecall_teste[i]=x['modelo']['result_test']['macro avg']['recall']
-            vacc_teste[i]=x['modelo']['result_test']['accuracy']
+            vprec_0_teste[i] = x['result_test']['0']['precision']
+            vrecall_0_teste[i] = x['result_test']['0']['recall']
+            vprec_1_teste[i]=x['result_test']['1']['precision']
+            vrecall_1_teste[i]=x['result_test']['1']['recall']
+            vf1_teste[i]=x['result_test']['macro avg']['f1-score']
+            vprec_teste[i]=x['result_test']['macro avg']['precision']
+            vrecall_teste[i]=x['result_test']['macro avg']['recall']
+            vacc_teste[i]=x['result_test']['accuracy']
 
         self.lst_melhores_modelos['precision_cls_0'] = vprec_0_teste
         self.lst_melhores_modelos['recall_cls_0'] = vrecall_0_teste
