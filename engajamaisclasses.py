@@ -1057,9 +1057,17 @@ class Engaja_mais:
            dfteste_.reset_index(drop=True)], axis=1)
       self.dfpredicteste["proba_1"] = self.dfpredicteste[
           "proba_1"].map('{:.4f}'.format)
-      print("Concluído!")
-      self.lst_test_modelos.append({'modelo':self.__modelotreinado,'result_test':{vtestes}})
 
+      vflg=0
+      for i in range(0, len(self.lst_test_modelos)):
+          if self.lst_test_modelos[i]['modelo'] == self.__modelotreinado:
+            vflg=1
+            self.lst_test_modelos[i]={'modelo': self.__modelotreinado,'result_test': vtestes}
+            break
+      if vflg == 0:
+          self.lst_test_modelos.append({'modelo': self.__modelotreinado, 'result_test': vtestes})
+
+      print("Concluído!")
       return vtestes
     else:
       print('Nenhum modelo treinado! Execute a Função "treina_modelo"')
