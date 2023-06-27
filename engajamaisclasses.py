@@ -1021,7 +1021,6 @@ class Engaja_mais:
       self.X_train = X_train
       self.__vnormmodeltr = vnorm
       self.__modelotreinado = nomemodelo
-      self.lst_test_modelos = []
 
   ########################
   def exec_predicao_modelo(self,dfteste_):
@@ -1059,7 +1058,8 @@ class Engaja_mais:
       self.dfpredicteste["proba_1"] = self.dfpredicteste[
           "proba_1"].map('{:.4f}'.format)
       print("Concluído!")
-      self.lst_test_modelos.append(vtestes)
+      self.lst_test_modelos.append({'modelo':self.__modelotreinado,'result_test':{vtestes}})
+
       return vtestes
     else:
       print('Nenhum modelo treinado! Execute a Função "treina_modelo"')
@@ -1287,29 +1287,45 @@ class Engaja_mais:
         vprec_1_teste = []
         vrecall_1_teste = []
         vf1_teste = []
+        vprec_teste = []
+        vrecall_teste = []
+        vacc_teste = []
+        vroc_auc = []
+
         for i in self.lst_melhores_modelos.iterrows():
             vprec_0_teste.append(0)
             vrecall_0_teste.append(0)
             vprec_1_teste.append(0)
             vrecall_1_teste.append(0)
             vf1_teste.append(0)
+            vprec_teste.append(0)
+            vrecall_teste.append(0)
+            vacc_teste.append(0)
+            vroc_auc.append(0)
 
         for i,x in enumerate(self.lst_test_modelos):
-            vprec_0_teste[i] = x['0']['precision']
-            vrecall_0_teste[i] = x['0']['recall']
-            vprec_1_teste[i]=x['1']['precision']
-            vrecall_1_teste[i]=x['1']['recall']
-            vf1_teste[i]=x['macro avg']['f1-score']
+            vprec_0_teste[i] = x['modelo']['result_test']['0']['precision']
+            vrecall_0_teste[i] = x['modelo']['result_test']['0']['recall']
+            vprec_1_teste[i]=x['modelo']['result_test']['1']['precision']
+            vrecall_1_teste[i]=x['modelo']['result_test']['1']['recall']
+            vf1_teste[i]=x['modelo']['result_test']['macro avg']['f1-score']
+            vprec_teste[i]=x['modelo']['result_test']['macro avg']['precision']
+            vrecall_teste[i]=x['modelo']['result_test']['macro avg']['recall']
+            vacc_teste[i]=x['modelo']['result_test']['accuracy']
 
         self.lst_melhores_modelos['precision_cls_0'] = vprec_0_teste
         self.lst_melhores_modelos['recall_cls_0'] = vrecall_0_teste
 
         self.lst_melhores_modelos['precision_cls_1'] = vprec_1_teste
         self.lst_melhores_modelos['recall_cls_1'] = vrecall_1_teste
-        self.lst_melhores_modelos['f1_score_cls_geral'] = vf1_teste
+        self.lst_melhores_modelos['f1_score'] = vf1_teste
+        self.lst_melhores_modelos['precision'] = vprec_teste
+        self.lst_melhores_modelos['recall'] = vrecall_teste
+        self.lst_melhores_modelos['accuracy'] = vrecall_teste
+        self.lst_melhores_modelos['roc_auc'] = vroc_auc
 
         vnomemodel = self.lst_melhores_modelos.groupby(['CLF'],
-                                as_index=False)['f1_score_cls_geral'].sum().sort_values('f1_score_cls_geral',
+                                as_index=False)['f1_score'].sum().sort_values('f1_score',
                                                                               ascending=False).head(1)['CLF'].values[0]
 
         vbestparams = self.reg_hiperparams[self.reg_hiperparams['modelo'] == vnomemodel].groupby(
