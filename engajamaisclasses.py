@@ -1021,6 +1021,7 @@ class Engaja_mais:
       self.X_train = X_train
       self.__vnormmodeltr = vnorm
       self.__modelotreinado = nomemodelo
+      self.lst_test_modelos = []
 
   ########################
   def exec_predicao_modelo(self,dfteste_):
