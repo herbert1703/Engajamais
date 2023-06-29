@@ -1504,7 +1504,7 @@ config_experimento.adiciona_modelo({'nome_classificador':'CAT',
                 'normaliza':False,
                 'executa_validacao':True,
                 'detalhe_treino': True,
-                'task_type':'GPU',
+                # 'task_type':'GPU',
                 'params_shap': {
                     'tipo_explainer': 'tree',
                     'param_proba':'probability',
