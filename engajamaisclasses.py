@@ -748,8 +748,12 @@ class Engaja_Xai:
     for (i,row) in vdadosnovosaluno.iterrows():
       print('Pesquisa de',nomecampo,':',
             conteudocampo,'Disciplina: ',row[campodisciplina])
+      # self.__plota_xaimodelo_local(
+      #     row[config_experimento.featuresselecionadas].to_frame().T,frtsaving)
       self.__plota_xaimodelo_local(
-          row[config_experimento.featuresselecionadas].to_frame().T,frtsaving)
+          dfpredicteste_[config_experimento.featuresselecionadas].iloc[i].to_frame().T,frtsaving)
+    
+      
       
   ###################### Plots Análise importância Global #####################
   def __make_shap_waterfall_plot(self,shap_values, features, num_display=20):
@@ -1015,10 +1019,10 @@ class Engaja_mais:
 
       print(self.modeloxai)
       self.modeloxai.fit(X_train,y_train)
+      self.X_train = X_train
       self.analise_Xai = Engaja_Xai(self.modeloxai,X_train,y_train)
       self.analise_Xai.efetua_xaimodelo_global(section,nomemodelo,'N')
       self.analise_Xai.normalizamodelo = config_experimento.comnormalizacao
-      self.X_train = X_train
       self.__vnormmodeltr = vnorm
       self.__modelotreinado = nomemodelo
 
@@ -1113,7 +1117,7 @@ class Engaja_mais:
           X_train,y_train = self.__normalizacao.realiza_operacao(
               X_train.copy(),y_train.copy())  
 
-          for i in range(30):
+          for i in range(3):
             print('Iteração:',i+1,"/",30)
             X_cross,X_test_,y_cross,y_test_ = train_test_split(X_train,y_train,
                     test_size=config_experimento.perc_test,
@@ -1506,10 +1510,10 @@ config_experimento.adiciona_modelo({'nome_classificador':'CAT',
                 'detalhe_treino': True,
                 # 'task_type':'GPU',
                 'params_shap': {
-                    'tipo_explainer': 'tree',
+                    'tipo_explainer': 'false',
                     'param_proba':'probability',
                     'check_additivity': True,
-                    'dim_shapvalues': 0}})
+                    'dim_shapvalues': 1}})
 
 config_experimento.adiciona_modelo({'nome_classificador':'LGB',
                 'classificador':ltb.LGBMClassifier(), 
